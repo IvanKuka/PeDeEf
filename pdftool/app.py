@@ -6,7 +6,7 @@ import logging
 import sys
 from types import TracebackType
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QApplication, QMessageBox
 
@@ -15,6 +15,9 @@ from pdftool.gui.main_window import MainWindow
 from pdftool.gui.style import app_icon, build_stylesheet
 
 logger = logging.getLogger(__name__)
+
+# Hidden command-line flag: start the app, then quit immediately (used by build.py).
+SMOKE_TEST_FLAG = "--smoke-test"
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -34,11 +37,19 @@ def main(argv: list[str] | None = None) -> int:
     app.setWindowIcon(app_icon())
     sys.excepthook = _report_unexpected_error
 
+    arguments = argv[1:]
+    smoke_test = SMOKE_TEST_FLAG in arguments
+    files = [argument for argument in arguments if argument != SMOKE_TEST_FLAG]
+
     window = MainWindow()
     window.show()
     # Files passed on the command line (e.g. via "Open with" or Explorer's "Send to") go to the merge list.
-    if len(argv) > 1:
-        window.merge_tab.add_files(argv[1:])
+    if files:
+        window.merge_tab.add_files(files)
+    if smoke_test:
+        # build.py checks the packaged app this way: it must get as far as a running
+        # event loop and then exit cleanly with code 0.
+        QTimer.singleShot(0, app.quit)
     return app.exec()
 
 

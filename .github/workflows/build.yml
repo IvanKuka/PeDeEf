@@ -1,5 +1,5 @@
 # Builds the Windows and macOS applications on every push and on demand.
-# The zips appear under the workflow run → "Artifacts"; pushing a tag such as v1.1.0
+# The zips and installers appear under the workflow run → "Artifacts"; pushing a tag such as v1.1.0
 # additionally publishes them as a GitHub Release.
 name: Build
 
@@ -20,10 +20,12 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-            artifact: PDF-Nastroje-windows
+            zip: PDF-Nastroje-windows.zip
+            installer: PDF-Nastroje-Setup.exe
           # macos-latest runs on Apple Silicon, so the app is built for M1 and newer Macs.
           - os: macos-latest
-            artifact: PDF-Nastroje-macos
+            zip: PDF-Nastroje-macos.zip
+            installer: PDF-Nastroje-macos.dmg
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
@@ -40,11 +42,17 @@ jobs:
       - name: Test and build
         run: python build.py
 
+      # Files are uploaded as-is (archive: false), so downloading one from the run page
+      # gives the file itself, not a zip around it. Each artifact is named after its file;
+      # unzipped uploads take a single file, hence one step per file.
       - uses: actions/upload-artifact@v7
         with:
-          path: dist/${{ matrix.artifact }}.zip
-          # Upload the zip as-is, so downloading it from the run page does not
-          # produce a zip inside a zip. The artifact is named after the file.
+          path: dist/${{ matrix.zip }}
+          archive: false
+
+      - uses: actions/upload-artifact@v7
+        with:
+          path: dist/${{ matrix.installer }}
           archive: false
 
   release:
@@ -60,8 +68,8 @@ jobs:
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
-        # find: the zips' location inside artifacts/ is not relied upon.
+        # find: the files' location inside artifacts/ is not relied upon.
         run: |
-          mapfile -t zips < <(find artifacts -name 'PDF-Nastroje-*.zip')
-          if [ "${#zips[@]}" -ne 2 ]; then echo "Expected 2 zips, found: ${zips[*]}"; exit 1; fi
-          gh release create "${{ github.ref_name }}" "${zips[@]}" --repo "${{ github.repository }}" --title "${{ github.ref_name }}" --generate-notes
+          mapfile -t files < <(find artifacts -type f -name 'PDF-Nastroje-*')
+          if [ "${#files[@]}" -ne 4 ]; then echo "Expected 4 files (2 zips, Setup.exe, .dmg), found: ${files[*]}"; exit 1; fi
+          gh release create "${{ github.ref_name }}" "${files[@]}" --repo "${{ github.repository }}" --title "${{ github.ref_name }}" --generate-notes
