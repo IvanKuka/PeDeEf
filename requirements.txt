@@ -1,0 +1,6 @@
+# Runtime – only the Qt modules the app uses (the full "pyside6" package also pulls in WebEngine, ~200 MB).
+PySide6-Essentials>=6.8
+PySide6-Pdf>=6.8
+pypdf>=5.0
+# Needed by pypdf to open AES-encrypted PDFs (e.g. documents with printing/editing restrictions).
+cryptography>=42

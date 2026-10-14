@@ -1,0 +1,9 @@
+[project]
+name = "pdftool"
+version = "1.0.0"
+description = "PDF Nástroje – desktop application for merging, splitting and rotating PDF files"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

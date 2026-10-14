@@ -1,0 +1,62 @@
+# Builds the Windows and macOS applications on every push and on demand.
+# The zips appear under the workflow run → "Artifacts"; pushing a tag such as v1.1.0
+# additionally publishes them as a GitHub Release.
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write  # needed only by the release job
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            artifact: PDF-Nastroje-windows
+          # macos-latest runs on Apple Silicon, so the app is built for M1 and newer Macs.
+          - os: macos-latest
+            artifact: PDF-Nastroje-macos
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: requirements*.txt
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements-dev.txt
+
+      - name: Test and build
+        run: python build.py
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/${{ matrix.artifact }}.zip
+          # The file is already a zip; avoid compressing it a second time.
+          compression-level: 0
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${{ github.ref_name }}" artifacts/*.zip --repo "${{ github.repository }}" --title "${{ github.ref_name }}" --generate-notes
