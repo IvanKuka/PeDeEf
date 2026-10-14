@@ -26,9 +26,9 @@ jobs:
             artifact: PDF-Nastroje-macos
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.14"
           cache: pip
@@ -40,23 +40,28 @@ jobs:
       - name: Test and build
         run: python build.py
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
-          name: ${{ matrix.artifact }}
           path: dist/${{ matrix.artifact }}.zip
-          # The file is already a zip; avoid compressing it a second time.
-          compression-level: 0
+          # Upload the zip as-is, so downloading it from the run page does not
+          # produce a zip inside a zip. The artifact is named after the file.
+          archive: false
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: artifacts
-          merge-multiple: true
+          # The artifacts are the release zips themselves; keep them packed.
+          skip-decompress: true
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "${{ github.ref_name }}" artifacts/*.zip --repo "${{ github.repository }}" --title "${{ github.ref_name }}" --generate-notes
+        # find: the zips' location inside artifacts/ is not relied upon.
+        run: |
+          mapfile -t zips < <(find artifacts -name 'PDF-Nastroje-*.zip')
+          if [ "${#zips[@]}" -ne 2 ]; then echo "Expected 2 zips, found: ${zips[*]}"; exit 1; fi
+          gh release create "${{ github.ref_name }}" "${zips[@]}" --repo "${{ github.repository }}" --title "${{ github.ref_name }}" --generate-notes

@@ -34,8 +34,7 @@ Hotovú aplikáciu stačí stiahnuť a rozbaliť. Python ani nič iné inštalov
 
 **Z posledného buildu** (vyžaduje prihlásenie na GitHub):
 1. Otvorte <https://github.com/IvanKuka/PeDeEf/actions> a kliknite na najnovší úspešný beh **Build** (zelená fajka).
-2. Dole v sekcii **Artifacts** stiahnite `PDF-Nastroje-windows` alebo `PDF-Nastroje-macos`.
-3. GitHub ho stiahne zabalený v ďalšom zipe; po rozbalení v ňom nájdete `PDF-Nastroje-windows.zip` / `PDF-Nastroje-macos.zip`.
+2. Dole v sekcii **Artifacts** stiahnite `PDF-Nastroje-windows.zip` alebo `PDF-Nastroje-macos.zip`.
 
 ### 2a. Windows (Windows 10 a 11, 64-bit)
 
