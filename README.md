@@ -31,9 +31,12 @@ Stačí stiahnuť inštalátor pre váš systém. Python ani nič iné inštalov
 1. Otvorte <https://github.com/IvanKuka/PeDeEf/releases>.
 2. Pri najnovšej verzii v časti **Assets** stiahnite:
    - **Windows:** `PDF-Nastroje-Setup.exe`
-   - **Mac:** `PDF-Nastroje-macos.dmg`
+   - **Mac s čipom Apple (M1, M2, M3, M4…):** `PDF-Nastroje-macos-apple-silicon.dmg`
+   - **Mac s procesorom Intel:** `PDF-Nastroje-macos-intel.dmg`
 
-Zipy `PDF-Nastroje-windows.zip` a `PDF-Nastroje-macos.zip` sú alternatíva bez inštalácie (pozri nižšie).
+   Aký čip má váš Mac zistíte cez ponuku Apple (logo jablka vľavo hore) → **O tomto Macu**: riadok **Čip** (napr. „Apple M2“) znamená Apple, riadok **Procesor** s textom „Intel“ znamená Intel.
+
+Zipy (`PDF-Nastroje-windows.zip`, `PDF-Nastroje-macos-….zip`) sú alternatíva bez inštalácie (pozri nižšie).
 
 Najnovší, ešte nevydaný build: <https://github.com/IvanKuka/PeDeEf/actions> → najnovší úspešný beh **Build** (zelená fajka) → sekcia **Artifacts** (vyžaduje prihlásenie na GitHub).
 
@@ -58,9 +61,9 @@ Odinštalovanie: **Nastavenia → Aplikácie → Nainštalované aplikácie → 
 Odinštalovanie: zmažte priečinok `PDF Nastroje`.
 </details>
 
-### 2b. macOS (Mac s čipom Apple M1 a novším)
+### 2b. macOS (macOS 14 Sonoma alebo novší, čip Apple aj Intel)
 
-1. Dvakrát kliknite na stiahnutý `PDF-Nastroje-macos.dmg`. Otvorí sa okno s aplikáciou **PDF Nastroje** a priečinkom **Applications**.
+1. Dvakrát kliknite na stiahnutý `.dmg` súbor pre váš Mac. Otvorí sa okno s aplikáciou **PDF Nastroje** a priečinkom **Applications**.
 2. Pretiahnite **PDF Nastroje** na priečinok **Applications** a počkajte, kým Finder dokončí kopírovanie.
 3. Zatvorte okno a v bočnom paneli Findera kliknite na tlačidlo vysunutia (⏏) pri **PDF Nástroje**.
 4. Spustite aplikáciu z priečinka **Aplikácie** (alebo cez Launchpad). Keďže nie je podpísaná certifikátom Apple, macOS ju zablokuje hláškou, že nemôže overiť vývojára. Zvoľte **Hotovo** (nie „Presunúť do koša“).
@@ -75,14 +78,16 @@ xattr -dr com.apple.quarantine "/Applications/PDF Nastroje.app"
 
 Novšiu verziu nainštalujete rovnako; pri kopírovaní potvrďte **Nahradiť**.
 
-Macy s procesorom Intel nie sú podporované (build je len pre Apple Silicon).
+Ak macOS hlási, že aplikáciu nemožno otvoriť, lebo nie je podporovaná na tomto Macu, stiahli ste verziu pre iný typ čipu.
+
+Aplikácia vyžaduje **macOS 14 Sonoma alebo novší** (požiadavka knižnice Qt). Staršie Macy s Intelom, na ktoré macOS 14 nejde nainštalovať (približne modely pred rokom 2018), nie sú podporované.
 
 Odinštalovanie: presuňte `PDF Nastroje` z Aplikácií do koša.
 
 <details>
 <summary>Bez obrazu disku (zip)</summary>
 
-Dvakrát kliknite na `PDF-Nastroje-macos.zip`, vzniknutú `PDF Nastroje.app` presuňte do **Aplikácií** a pokračujte krokom 4 vyššie.
+Dvakrát kliknite na zip pre váš Mac (`PDF-Nastroje-macos-apple-silicon.zip` alebo `PDF-Nastroje-macos-intel.zip`), vzniknutú `PDF Nastroje.app` presuňte do **Aplikácií** a pokračujte krokom 4 vyššie.
 </details>
 
 ---
@@ -137,13 +142,13 @@ Na macOS nahraďte `.\.venv\Scripts\python.exe` za `.venv/bin/python`.
 Skript spustí testy a zostaví aplikáciu **pre systém, na ktorom beží** (Windows verziu treba zostaviť na Windows, Mac verziu na Macu):
 
 - **Windows:** `dist\PDF-Nastroje-Setup.exe` (inštalátor), `dist\PDF-Nastroje-windows.zip` a priečinok `dist\PDF Nastroje\`. Na inštalátor treba [Inno Setup 6](https://jrsoftware.org/isinfo.php): `winget install --id JRSoftware.InnoSetup --scope user`.
-- **macOS:** `dist/PDF-Nastroje-macos.dmg` (obraz disku), `dist/PDF-Nastroje-macos.zip` a `dist/PDF Nastroje.app`.
+- **macOS:** `dist/PDF-Nastroje-macos-<čip>.dmg` (obraz disku), `dist/PDF-Nastroje-macos-<čip>.zip` a `dist/PDF Nastroje.app`, kde `<čip>` je `apple-silicon` alebo `intel` podľa Macu, na ktorom build beží (verzia pre Intel sa dá zostaviť len na Intel Macu).
 
 Pred zabalením build zostavenú aplikáciu raz skúšobne spustí (`--smoke-test`); ak sa nespustí, build zlyhá.
 
 ### 5. Automatický build a vydanie novej verzie (GitHub Actions)
 
-Workflow [.github/workflows/build.yml](.github/workflows/build.yml) pri každom pushnutí na `main` zostaví Windows aj Mac verziu vrátane inštalátorov (výsledky v **Actions → Artifacts**, uchovávajú sa 90 dní).
+Workflow [.github/workflows/build.yml](.github/workflows/build.yml) pri každom pushnutí na `main` zostaví Windows verziu a obe Mac verzie (Apple Silicon a Intel) vrátane inštalátorov (výsledky v **Actions → Artifacts**, uchovávajú sa 90 dní).
 
 Vydanie verzie, ktorú si používatelia stiahnu z **Releases**:
 

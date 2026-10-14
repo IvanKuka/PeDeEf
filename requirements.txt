@@ -3,4 +3,7 @@ PySide6-Essentials>=6.8
 PySide6-Pdf>=6.8
 pypdf>=5.0
 # Needed by pypdf to open AES-encrypted PDFs (e.g. documents with printing/editing restrictions).
-cryptography>=42
+cryptography>=42; sys_platform != "darwin" or platform_machine != "x86_64"
+# cryptography 49+ publishes no wheels for Intel Macs (building from source needs Rust
+# and OpenSSL), so the Intel Mac build stays on the last release that has them.
+cryptography>=42,<49; sys_platform == "darwin" and platform_machine == "x86_64"

@@ -5,8 +5,9 @@ Usage (from the project root, with requirements-dev.txt installed):
 
 Windows: dist/PDF Nastroje/ (folder with the .exe), dist/PDF-Nastroje-windows.zip
          and the installer dist/PDF-Nastroje-Setup.exe (requires Inno Setup 6)
-macOS:   dist/PDF Nastroje.app, dist/PDF-Nastroje-macos.zip
-         and the disk image dist/PDF-Nastroje-macos.dmg
+macOS:   dist/PDF Nastroje.app, dist/PDF-Nastroje-macos-<arch>.zip
+         and the disk image dist/PDF-Nastroje-macos-<arch>.dmg, where <arch> is
+         "apple-silicon" or "intel" depending on the Mac the build runs on
 
 Before packaging, the built app is started once (smoke test) to catch packaging
 problems that the tests, which run from source, cannot see.
@@ -18,6 +19,7 @@ PyInstaller cannot cross-compile, so each platform must be built on that platfor
 from __future__ import annotations
 
 import os
+import platform
 import shutil
 import subprocess
 import sys
@@ -32,6 +34,9 @@ DIST_DIR = ROOT / "dist"
 APP_NAME = "PDF Nastroje"
 BUNDLE_ID = "sk.pdfnastroje"
 IS_MAC = sys.platform == "darwin"
+# An app built on an Apple Silicon Mac does not run on an Intel Mac and vice versa,
+# so each architecture is built separately and named so users can tell them apart.
+MAC_ARTIFACT_NAME = "PDF-Nastroje-macos-" + ("intel" if platform.machine() == "x86_64" else "apple-silicon")
 IS_WINDOWS = sys.platform == "win32"
 SMOKE_TEST_TIMEOUT_SECONDS = 120
 
@@ -118,7 +123,7 @@ def smoke_test() -> None:
 
 def build_zip() -> Path:
     if IS_MAC:
-        archive = DIST_DIR / "PDF-Nastroje-macos.zip"
+        archive = DIST_DIR / f"{MAC_ARTIFACT_NAME}.zip"
         archive.unlink(missing_ok=True)
         # ditto, unlike shutil, preserves the symlinks and permissions inside the .app
         # bundle (Qt frameworks rely on them); a bundle zipped otherwise may not start.
@@ -141,7 +146,7 @@ def build_dmg() -> Path:
     run(["ditto", str(DIST_DIR / f"{APP_NAME}.app"), str(staging / f"{APP_NAME}.app")])
     (staging / "Applications").symlink_to("/Applications")
 
-    dmg = DIST_DIR / "PDF-Nastroje-macos.dmg"
+    dmg = DIST_DIR / f"{MAC_ARTIFACT_NAME}.dmg"
     command = [
         "hdiutil", "create",
         "-volname", "PDF Nástroje",
