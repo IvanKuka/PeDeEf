@@ -121,18 +121,27 @@ def recognize_page(
         raise PdfToolError("Vybraný jazyk OCR nie je nainštalovaný. Vyberte dostupný jazyk alebo aplikáciu preinštalujte.")
     if type(dpi) is not int or dpi <= 0:
         raise PdfToolError("Rozlíšenie strany na rozpoznanie textu musí byť kladné celé číslo.")
-    layer = None
+    best, best_length = None, -1
     for layout in _LAYOUTS:
         layer = _run_tesseract(tesseract, png, language, dpi, layout, is_cancelled)
-        if layer is None or _has_text(layer):
-            return layer
-    return layer  # a page without any text, such as an empty back side
+        if layer is None:
+            return None
+        length = _text_length(layer)
+        if length > best_length:
+            best, best_length = layer, length
+        if best_length >= _ENOUGH_TEXT:
+            break
+    return best  # possibly without any text, such as an empty back side
 
 
 # Page layouts to try, by Tesseract's page segmentation mode. Automatic layout analysis keeps
-# columns apart, but finds no lines at all on some skewed scans with dense lines (seen with
-# 2° on 12-point text); reading the page as one block of text still recognises those.
+# columns apart, but finds few or no lines on some skewed scans with dense lines (seen with
+# 2° on 12-point text: nothing with Tesseract 5.4, a single line with 5.5); reading the page
+# as one block of text still recognises those. The block layout is tried when the automatic
+# one reads less than _ENOUGH_TEXT characters, and the longer result is kept: a short page
+# costs a second, quick pass, a full one none.
 _LAYOUTS = ("3", "6")
+_ENOUGH_TEXT = 200
 
 
 def _read_layer(layer: bytes):
@@ -149,9 +158,9 @@ def _read_layer(layer: bytes):
         raise PdfToolError(f"Výsledok rozpoznávania textu sa nepodarilo načítať: {exc}") from exc
 
 
-def _has_text(layer: bytes) -> bool:
+def _text_length(layer: bytes) -> int:
     try:
-        return bool(_read_layer(layer).extract_text().strip())
+        return len("".join(_read_layer(layer).extract_text().split()))
     except (PdfReadError, ValueError) as exc:
         raise PdfToolError("Text vo výsledku OCR sa nepodarilo načítať.") from exc
 

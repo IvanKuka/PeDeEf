@@ -145,3 +145,25 @@ def test_text_layer_is_scaled_to_the_visible_base_size(app, tmp_path):
     reader = PdfReader(output)
     assert float(reader.pages[0].mediabox.width) == 800
     assert "OCR result" in " ".join(reader.pages[0].extract_text().split())
+
+
+def test_a_sparse_automatic_layout_is_retried_as_one_block_and_the_fuller_text_kept(tmp_path, monkeypatch):
+    # Tesseract 5.5 reads a single line of some askew scans with automatic layout analysis.
+    fragment = text_pdf(tmp_path / "fragment.pdf", ["do štrnástich dní"])[0].path.read_bytes()
+    full = text_pdf(tmp_path / "full.pdf", ["Objednávateľ uhradí cenu do štrnástich dní. " * 8])[0].path.read_bytes()
+    engine = type("Engine", (), {"languages": lambda self: ["slk"]})()
+    png = b"\x89PNG\r\n\x1a\n"
+
+    def run(layers):
+        calls = []
+
+        def fake(tesseract, image, language, dpi, layout, is_cancelled):
+            calls.append(layout)
+            return layers[layout]
+
+        monkeypatch.setattr(ocr, "_run_tesseract", fake)
+        return ocr.recognize_page(engine, png, "slk", 150, lambda: False), calls
+
+    assert run({"3": fragment, "6": full}) == (full, ["3", "6"])
+    assert run({"3": full, "6": fragment}) == (full, ["3"])  # a full page needs no second pass
+    assert run({"3": full, "6": None}) == (full, ["3"])
