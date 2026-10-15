@@ -16,7 +16,6 @@ from pdftool.gui.recognition import recognize_pages
 from pdftool.gui.thumbnails import on_white, open_document, render_page_scaled, visible_point_size
 from pdftool.ocr import find_tesseract, write_with_text_layers
 from pdftool.operations import DocumentInfo, PageRef, unlock, write_pages
-from pdftool.text_search import normalize
 from tests.test_compare import text_pdf
 from tests.test_stamps import dark_pixel_box
 
@@ -94,11 +93,8 @@ def test_a_scan_lying_slightly_askew_is_still_recognised(app, tmp_path):
 
     write_with_text_layers(pages, recognize_pages(pages, [0], TESSERACT, "slk", lambda done: True), output)
 
-    # Compared as the app searches (without diacritics): Tesseract versions and language data
-    # differ between platforms (bundled tessdata_fast on Windows, Homebrew's data on macOS) in
-    # how they read letters such as "ľ", while the words stay findable.
-    words = normalize(page_texts(output)[0]).split()
-    assert words.count("objednavatel") >= 5 and words.count("strnastich") >= 5
+    words = page_texts(output)[0].split()
+    assert words.count("Objednávateľ") >= 5 and words.count("štrnástich") >= 5
 
 
 def test_cancelling_stops_recognition_at_once(app, tmp_path):

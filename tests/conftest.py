@@ -6,7 +6,9 @@ from pathlib import Path
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 # The offscreen platform has no fonts of its own; without the system's, text is drawn as
 # empty boxes and tests cannot check what was written (e.g. page numbers with diacritics).
-for font_dir in ("C:/Windows/Fonts", "/System/Library/Fonts", "/usr/share/fonts"):
+# Qt does not look into subfolders: on macOS, Arial and the other fonts with all Slovak
+# letters are in Supplemental, while the folder above has no Arial.
+for font_dir in ("C:/Windows/Fonts", "/System/Library/Fonts/Supplemental", "/System/Library/Fonts", "/usr/share/fonts"):
     if Path(font_dir).is_dir():
         os.environ.setdefault("QT_QPA_FONTDIR", font_dir)
         break
