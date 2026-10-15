@@ -1,0 +1,41 @@
+Rozpoznávanie textu (OCR) v PDF Nástrojoch – použité súčasti tretích strán
+==========================================================================
+
+PDF Nástroje spúšťajú Tesseract ako samostatný program (priečinok "tesseract").
+Ide o neupravené súbory zostavenia Tesseract pre Windows od UB Mannheim
+(https://github.com/UB-Mannheim/tesseract), ktoré pochádzajú z balíkov MSYS2
+(https://packages.msys2.org); zdrojové kódy všetkých knižníc sú dostupné tam.
+
+Súčasť                          Licencia
+------------------------------  ---------------------------------------------
+Tesseract 5.4.0                 Apache-2.0 (LICENSE-tesseract.txt)
+jazykové dáta tessdata_fast     Apache-2.0
+  4.1.0 (slk, ces, eng, deu)    https://github.com/tesseract-ocr/tessdata_fast
+Leptonica 1.84.1                BSD-2-Clause
+JBIG-KIT (libjbig)              GPL-2.0-or-later  – pozri nižšie
+GNU libiconv                    LGPL-2.1-or-later – pozri nižšie
+GCC runtime (libgcc, libstdc++) GPL-3.0 s výnimkou GCC Runtime Library Exception
+mingw-w64 winpthreads           MIT / BSD-3-Clause
+OpenSSL 3 (libcrypto)           Apache-2.0
+libarchive                      BSD-2-Clause
+libb2 (BLAKE2)                  CC0-1.0
+bzip2                           bzip2-1.0.6
+zlib 1.3                        Zlib
+Zstandard                       BSD-3-Clause
+LZ4                             BSD-2-Clause
+XZ Utils (liblzma)              0BSD
+libdeflate                      MIT
+Expat                           MIT
+giflib 5.2.1                    MIT
+libjpeg-turbo 3.0.1             IJG / BSD-3-Clause / Zlib
+libpng 1.6.43                   libpng-2.0
+LibTIFF 4.6.0                   libtiff
+libwebp 1.4.0 (sharpyuv, mux)   BSD-3-Clause
+OpenJPEG 2.5.2                  BSD-2-Clause
+LERC                            Apache-2.0
+
+Knižnice pod licenciou GPL/LGPL (JBIG-KIT, GNU libiconv) sú samostatné súbory
+DLL, ktoré používa len program Tesseract; PDF Nástroje s nimi nie sú zostavené.
+Ich zdrojové kódy: https://www.cl.cam.ac.uk/~mgk25/jbigkit/ a
+https://www.gnu.org/software/libiconv/, verzie použité v tomto zostavení
+v balíkoch MSYS2 mingw-w64-x86_64-jbigkit a mingw-w64-x86_64-libiconv.

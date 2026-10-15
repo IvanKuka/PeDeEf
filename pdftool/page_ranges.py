@@ -6,6 +6,8 @@ indices, which is what the PDF libraries expect.
 
 from __future__ import annotations
 
+import sys
+
 from pdftool.plural import format_page_count
 
 
@@ -42,9 +44,37 @@ def parse_page_groups(spec: str, page_count: int) -> list[list[int]]:
     return groups
 
 
+def validate_page_spec(spec: str) -> None:
+    """Check a spec's syntax before the documents are known, e.g. for a batch over many files.
+
+    Raises PageRangeError for malformed input; whether the pages exist can only
+    be checked per document with `parse_page_ranges`.
+    """
+    for part in spec.split(","):
+        start_text, has_dash, end_text = part.strip().partition("-")
+        for text in (start_text, end_text) if has_dash else (start_text,):
+            if text.strip():
+                # No real limit on the page number here; nothing is expanded into a list.
+                _parse_page_number(text, sys.maxsize)
+
+
 def parse_page_ranges(spec: str, page_count: int) -> list[int]:
     """Parse a spec into a flat, ordered list of 0-based page indices."""
     return [page for group in parse_page_groups(spec, page_count) for page in group]
+
+
+def format_page_ranges(pages: list[int]) -> str:
+    """The inverse of `parse_page_ranges` for ascending pages: [0, 1, 2, 5] -> "1-3, 6"."""
+    parts = []
+    start = previous = None
+    for page in [*pages, None]:
+        if start is not None and page == previous + 1:
+            previous = page
+            continue
+        if start is not None:
+            parts.append(str(start + 1) if start == previous else f"{start + 1}-{previous + 1}")
+        start = previous = page
+    return ", ".join(parts)
 
 
 def chunk_pages(page_count: int, chunk_size: int) -> list[list[int]]:

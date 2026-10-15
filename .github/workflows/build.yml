@@ -42,6 +42,15 @@ jobs:
       - name: Install dependencies
         run: python -m pip install -r requirements-dev.txt
 
+      # build.py bundles OCR on Windows from this installation (UB Mannheim build of Tesseract).
+      - name: Install Tesseract
+        if: runner.os == 'Windows'
+        run: choco install tesseract --no-progress -y
+
+      - name: Install Tesseract for OCR integration tests on macOS
+        if: runner.os == 'macOS'
+        run: brew install tesseract tesseract-lang
+
       - name: Test and build
         run: python build.py
 
@@ -75,4 +84,7 @@ jobs:
         run: |
           mapfile -t files < <(find artifacts -type f -name 'PDF-Nastroje-*')
           if [ "${#files[@]}" -ne 6 ]; then echo "Expected 6 files (3 zips, Setup.exe, 2 .dmg), found: ${files[*]}"; exit 1; fi
-          gh release create "${{ github.ref_name }}" "${files[@]}" --repo "${{ github.repository }}" --title "${{ github.ref_name }}" --generate-notes
+          # The app checks the installer it downloads for an update against this list.
+          for file in "${files[@]}"; do (cd "$(dirname "$file")" && sha256sum "$(basename "$file")"); done > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+          gh release create "${{ github.ref_name }}" "${files[@]}" SHA256SUMS.txt --repo "${{ github.repository }}" --title "${{ github.ref_name }}" --generate-notes

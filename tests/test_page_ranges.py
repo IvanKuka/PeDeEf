@@ -3,10 +3,12 @@ import pytest
 from pdftool.page_ranges import (
     PageRangeError,
     chunk_pages,
+    format_page_ranges,
     parse_page_groups,
     parse_page_ranges,
+    validate_page_spec,
 )
-from pdftool.plural import format_file_count, format_page_count
+from pdftool.plural import format_file_count, format_page_count, format_page_count_genitive
 
 
 @pytest.mark.parametrize(
@@ -65,5 +67,26 @@ def test_format_page_count(count, expected):
     assert format_page_count(count) == expected
 
 
+def test_format_page_count_genitive():
+    assert [format_page_count_genitive(n) for n in (1, 2, 4, 5)] == ["1 strany", "2 strán", "4 strán", "5 strán"]
+
+
 def test_format_file_count():
     assert [format_file_count(n) for n in (1, 3, 12)] == ["1 súbor", "3 súbory", "12 súborov"]
+
+
+def test_format_page_ranges_is_the_inverse_of_parsing():
+    assert format_page_ranges([0, 1, 2, 5, 7, 8]) == "1-3, 6, 8-9"
+    assert parse_page_ranges(format_page_ranges([0, 1, 2, 5]), 6) == [0, 1, 2, 5]
+    assert format_page_ranges([]) == ""
+
+
+@pytest.mark.parametrize("spec", ["", "1", "2-5, 9-", "-3", " 4 , "])
+def test_validate_page_spec_accepts_well_formed_specs(spec):
+    validate_page_spec(spec)
+
+
+@pytest.mark.parametrize("spec", ["a", "1-x", "0", "1.5"])
+def test_validate_page_spec_rejects_malformed_specs(spec):
+    with pytest.raises(PageRangeError):
+        validate_page_spec(spec)

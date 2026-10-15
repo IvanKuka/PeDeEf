@@ -8,11 +8,14 @@ is still fully usable with placeholder images.
 from __future__ import annotations
 
 from collections import deque
+from collections.abc import Iterable
 from pathlib import Path
 
 from PySide6.QtCore import QBuffer, QByteArray, QIODevice, QObject, QRect, QSize, QSizeF, Qt, QTimer, Signal
 from PySide6.QtGui import QColor, QGuiApplication, QIcon, QImage, QPainter, QPixmap, QTransform
 from PySide6.QtPdf import QPdfDocument
+
+from pdftool.operations import CropMargins, password_for
 
 _FRAME_COLOR = QColor("#d1d5db")
 
@@ -33,6 +36,70 @@ def render_first_page(path: Path, max_side: int) -> QImage | None:
         document.close()
 
 
+def open_document(path: Path, parent: QObject | None = None) -> QPdfDocument | None:
+    """Open `path` for rendering, or return None if QtPdf cannot load it."""
+    document = QPdfDocument(parent)
+    if _load_into_memory(document, path) is None:
+        document.deleteLater()
+        return None
+    return document
+
+
+def on_white(image: QImage) -> QImage:
+    """`image` composed onto white: QtPdf leaves unpainted page areas transparent, real paper is white."""
+    result = QImage(image.size(), QImage.Format.Format_RGB32)
+    result.fill(QColor("white"))
+    result.setDevicePixelRatio(image.devicePixelRatio())
+    painter = QPainter(result)
+    painter.drawImage(0, 0, image)
+    painter.end()
+    return result
+
+
+def render_page_scaled(
+    document: QPdfDocument,
+    page: int,
+    pixels_per_point: float,
+    rotation: int = 0,
+    crop: CropMargins | None = None,
+) -> QImage:
+    """Render `page` at an exact scale (physical pixels per PDF point), turned clockwise by `rotation`
+    and cut to `crop`, i.e. as the page will look once saved.
+
+    Unlike thumbnails, the page is rendered at the size it will be shown, so a
+    detail view stays sharp instead of enlarging a small image.
+    """
+    size = document.pagePointSize(page)
+    image = document.render(
+        page, QSize(max(1, round(size.width() * pixels_per_point)), max(1, round(size.height() * pixels_per_point)))
+    )
+    if rotation % 360:
+        image = image.transformed(QTransform().rotate(rotation), Qt.TransformationMode.SmoothTransformation)
+    return crop_image(image, crop)
+
+
+def visible_point_size(document: QPdfDocument, page: int, rotation: int = 0, crop: CropMargins | None = None) -> QSizeF:
+    """Size in points of `page` as shown: turned by `rotation` and cut to `crop`."""
+    size = document.pagePointSize(page)
+    if rotation % 180:
+        size = size.transposed()
+    if crop is not None:
+        left, top, right, bottom = crop
+        size = QSizeF(size.width() * (1 - left - right), size.height() * (1 - top - bottom))
+    return size
+
+
+def crop_image(image: QImage, crop: CropMargins | None) -> QImage:
+    """The part of a page image inside `crop` (margins as fractions of the image)."""
+    if crop is None or image.isNull():
+        return image
+    left, top, right, bottom = crop
+    width, height = image.width(), image.height()
+    return image.copy(
+        round(width * left), round(height * top), round(width * (1 - left - right)), round(height * (1 - top - bottom))
+    )
+
+
 def placeholder_image(max_side: int) -> QImage:
     """A blank A4-proportioned page shown until (or instead of) the real thumbnail."""
     ratio = device_pixel_ratio()
@@ -43,14 +110,15 @@ def placeholder_image(max_side: int) -> QImage:
     return image
 
 
-def thumbnail_icon(image: QImage, side: int, rotation: int = 0) -> QIcon:
-    """Turn a rendered page into a square list icon, applying the pending rotation.
+def thumbnail_icon(image: QImage, side: int, rotation: int = 0, crop: CropMargins | None = None) -> QIcon:
+    """Turn a rendered page into a square list icon, applying the pending rotation and crop.
 
     The page is centred on a fixed `side` x `side` canvas so portrait, landscape
     and rotated pages line up identically in lists.
     """
     if rotation % 360:
         image = image.transformed(QTransform().rotate(rotation), Qt.TransformationMode.SmoothTransformation)
+    image = crop_image(image, crop)
 
     ratio = image.devicePixelRatio()
     canvas_side = round(side * ratio)
@@ -76,7 +144,7 @@ def thumbnail_icon(image: QImage, side: int, rotation: int = 0) -> QIcon:
 
 
 class PageThumbnailRenderer(QObject):
-    """Renders every page of one document, one page per event-loop iteration.
+    """Renders pages of one document, one page per event-loop iteration.
 
     QPdfDocument must stay on the GUI thread, so instead of a worker thread the
     pages are rendered from a zero-interval timer. This keeps the window
@@ -95,8 +163,8 @@ class PageThumbnailRenderer(QObject):
         self._timer.setInterval(0)
         self._timer.timeout.connect(self._render_next)
 
-    def start(self, path: Path, max_side: int) -> bool:
-        """Begin rendering `path`; return False if QtPdf cannot open the document."""
+    def start(self, path: Path, max_side: int, pages: Iterable[int] | None = None) -> bool:
+        """Begin rendering `pages` (default: all) of `path`; return False if QtPdf cannot open the document."""
         self.stop()
         self._document.close()
         if self._buffer is not None:
@@ -106,9 +174,15 @@ class PageThumbnailRenderer(QObject):
         if self._buffer is None:
             return False
         self._max_side = max_side
-        self._pending.extend(range(self._document.pageCount()))
-        self._timer.start()
+        self.request(range(self._document.pageCount()) if pages is None else pages)
         return True
+
+    def request(self, pages: Iterable[int]) -> None:
+        """Queue more pages of the document opened by `start`; out-of-range pages are ignored."""
+        page_count = self._document.pageCount()
+        self._pending.extend(page for page in pages if 0 <= page < page_count)
+        if self._pending:
+            self._timer.start()
 
     def stop(self) -> None:
         self._timer.stop()
@@ -136,6 +210,8 @@ def _load_into_memory(document: QPdfDocument, path: Path) -> QBuffer | None:
     buffer = QBuffer(document)
     buffer.setData(QByteArray(data))
     buffer.open(QIODevice.OpenModeFlag.ReadOnly)
+    # A password the user typed for this file in this session (see operations.unlock).
+    document.setPassword(password_for(path) or "")
     document.load(buffer)
     if document.error() != QPdfDocument.Error.None_:
         buffer.deleteLater()

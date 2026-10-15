@@ -18,5 +18,15 @@ def format_page_count(count: int) -> str:
     return format_count(count, "strana", "strany", "strán")
 
 
+def format_page_count_genitive(count: int) -> str:
+    """E.g. "1 strany", "3 strán" – the form used after nouns such as "Odstránenie"."""
+    return format_count(count, "strany", "strán", "strán")
+
+
+def format_page_count_locative(count: int) -> str:
+    """E.g. "1 strane", "3 stranách" – the form used after "na"."""
+    return format_count(count, "strane", "stranách", "stranách")
+
+
 def format_file_count(count: int) -> str:
     return format_count(count, "súbor", "súbory", "súborov")
