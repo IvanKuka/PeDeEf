@@ -58,6 +58,9 @@ TESSDATA_SHA256 = {
 
 
 def main() -> None:
+    # Progress messages are Slovak; CI consoles on Windows use a code page without "ť".
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
     if not (IS_MAC or IS_WINDOWS):
         sys.exit(f"Nepodporovaná platforma: {sys.platform} (podporované: Windows, macOS)")
 
