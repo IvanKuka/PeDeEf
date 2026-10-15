@@ -1,9 +1,10 @@
+import subprocess
 import time
 from contextlib import contextmanager
 
 import pytest
 from PySide6.QtCore import QRectF, QSizeF, Qt, QTimer
-from PySide6.QtGui import QColor, QFont, QImage, QPageSize, QPainter, QPdfWriter, QTransform
+from PySide6.QtGui import QColor, QFont, QFontInfo, QImage, QPageSize, QPainter, QPdfWriter, QTransform
 from PySide6.QtWidgets import QDialog, QProgressDialog, QPushButton
 from PySide6.QtTest import QTest
 from pypdf import PdfReader, PdfWriter
@@ -93,8 +94,15 @@ def test_a_scan_lying_slightly_askew_is_still_recognised(app, tmp_path):
 
     write_with_text_layers(pages, recognize_pages(pages, [0], TESSERACT, "slk", lambda done: True), output)
 
-    words = page_texts(output)[0].split()
-    assert words.count("Objednávateľ") >= 5 and words.count("štrnástich") >= 5
+    recognised = page_texts(output)[0]
+    words = recognised.split()
+    # Recognition depends on the Tesseract build and the fonts of the platform; when it fails,
+    # the message shows what was read and with what, instead of the first few words only.
+    version = subprocess.run([str(TESSERACT.executable), "--version"], capture_output=True, text=True).stdout
+    drawn_with = QFontInfo(QFont("Arial")).family()
+    assert words.count("Objednávateľ") >= 5 and words.count("štrnástich") >= 5, (
+        f"{version.splitlines()[:1]} {TESSERACT.tessdata}, scan font {drawn_with}: {recognised!r}"
+    )
 
 
 def test_cancelling_stops_recognition_at_once(app, tmp_path):
