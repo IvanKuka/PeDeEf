@@ -200,6 +200,8 @@ Po dobehnutí buildu sa automaticky vytvorí Release s inštalátormi a zipmi pr
 
 ## Štruktúra
 
+Podrobná mapa projektu: [STRUCTURE.md](STRUCTURE.md). Pokyny pre AI: [AGENTS.md](AGENTS.md) a [CLAUDE.md](CLAUDE.md). Dokumentácia a navigácia k modulom: [ai/structure.md](ai/structure.md).
+
 | Súbor | Účel |
 |---|---|
 | `pdftool/history.py` | história Späť/Znova (snímky stavu), bez závislosti na GUI |

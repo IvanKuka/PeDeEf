@@ -1,0 +1,144 @@
+{
+  "version": 2,
+  "description": "Task routing for PDF Nastroje. All paths are relative to the repository root.",
+  "read_order": [
+    "STRUCTURE.md",
+    "ai/task-routing.md",
+    "ai/specs/README.md"
+  ],
+  "always_only_if_needed": [
+    "ai/spec.md",
+    "ai/conventions.md",
+    "ai/workflows.md"
+  ],
+  "modules": {
+    "pdf_core": {
+      "knowledge": "ai/knowledge/pdf-core.md",
+      "source_first": [
+        "pdftool/operations.py",
+        "pdftool/page_ranges.py",
+        "pdftool/pdf_resources.py"
+      ],
+      "tests": [
+        "tests/test_operations.py",
+        "tests/test_page_ranges.py",
+        "tests/test_passwords.py",
+        "tests/test_crop.py",
+        "tests/test_properties.py"
+      ]
+    },
+    "editing_workspace": {
+      "knowledge": "ai/knowledge/editing-workspace.md",
+      "source_first": [
+        "pdftool/gui/pages_tab.py",
+        "pdftool/history.py",
+        "pdftool/working_document.py",
+        "pdftool/project.py"
+      ],
+      "tests": [
+        "tests/test_gui.py",
+        "tests/test_history.py",
+        "tests/test_pending_edits.py",
+        "tests/test_project.py"
+      ]
+    },
+    "merge_batch": {
+      "knowledge": "ai/knowledge/pdf-core.md",
+      "source_first": [
+        "pdftool/gui/merge_tab.py",
+        "pdftool/batch.py",
+        "pdftool/gui/batch_tab.py"
+      ],
+      "tests": [
+        "tests/test_operations.py",
+        "tests/test_batch.py"
+      ]
+    },
+    "document_tools": {
+      "knowledge": "ai/knowledge/document-tools.md",
+      "source_first": [
+        "pdftool/stamps.py",
+        "pdftool/forms.py",
+        "pdftool/ocr.py",
+        "pdftool/signing.py",
+        "pdftool/gui/redaction.py",
+        "pdftool/text_search.py",
+        "pdftool/gui/compare.py"
+      ],
+      "tests": [
+        "tests/test_stamps.py",
+        "tests/test_forms.py",
+        "tests/test_ocr.py",
+        "tests/test_signing.py",
+        "tests/test_redaction.py",
+        "tests/test_search.py",
+        "tests/test_compare.py"
+      ]
+    },
+    "gui_shell_settings": {
+      "knowledge": "ai/knowledge/gui-shell-settings.md",
+      "source_first": [
+        "pdftool/app.py",
+        "pdftool/gui/main_window.py",
+        "pdftool/gui/command_bar.py",
+        "pdftool/gui/settings.py"
+      ],
+      "tests": [
+        "tests/test_gui.py",
+        "tests/test_settings.py"
+      ]
+    },
+    "updates": {
+      "knowledge": "ai/knowledge/gui-shell-settings.md",
+      "source_first": [
+        "pdftool/updates.py",
+        "pdftool/gui/update_check.py"
+      ],
+      "tests": [
+        "tests/test_updates.py"
+      ]
+    },
+    "testing_build": {
+      "knowledge": "ai/knowledge/testing-build.md",
+      "source_first": [
+        "build.py",
+        ".github/workflows/build.yml",
+        "tests/conftest.py"
+      ],
+      "tests": [
+        "tests/test_build_ocr.py",
+        "tests/test_ocr_engine.py"
+      ]
+    }
+  },
+  "ui_patterns": {
+    "app_shell": {
+      "spec": "ai/specs/app-shell-navigation.md",
+      "source_first": [
+        "pdftool/gui/main_window.py",
+        "pdftool/gui/command_bar.py"
+      ]
+    },
+    "document_editing": {
+      "spec": "ai/specs/document-editing.md",
+      "source_first": [
+        "pdftool/gui/pages_tab.py",
+        "pdftool/history.py",
+        "pdftool/working_document.py"
+      ]
+    },
+    "preview_dialogs": {
+      "spec": "ai/specs/preview-and-dialogs.md",
+      "source_first": [
+        "pdftool/gui/zoomed_page.py",
+        "pdftool/gui/stamp_layer.py",
+        "pdftool/gui/page_grid.py"
+      ]
+    }
+  },
+  "operations": [
+    "ai/operations-security.md",
+    "ai/deployment/README.md"
+  ],
+  "archive": "ai/archive/README.md"
+}
